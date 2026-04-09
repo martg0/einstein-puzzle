@@ -3,6 +3,9 @@
 #include <SDL/SDL.h>
 #include <SDL/SDL_main.h>
 #include <SDL/SDL_ttf.h>
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 #include "main.h"
 #include "utils.h"
 #include "storage.h"
@@ -23,8 +26,13 @@ static void initScreen()
     atexit(SDL_Quit);
     if (TTF_Init())
         throw Exception(L"Error initializing font engine");
-    screen.setMode(VideoMode(800, 600, 24, 
-                getStorage()->get(L"fullscreen", 1) != 0));
+    screen.setMode(VideoMode(800, 600, 24,
+#ifdef __EMSCRIPTEN__
+                false
+#else
+                getStorage()->get(L"fullscreen", 1) != 0
+#endif
+                ));
     screen.initCursors();
     
     SDL_Surface *mouse = loadImage(L"cursor.bmp");
@@ -32,6 +40,10 @@ static void initScreen()
     screen.setMouseImage(mouse);
     SDL_FreeSurface(mouse);
     SDL_WM_SetCaption("Einstein", NULL);
+
+#ifdef __EMSCRIPTEN__
+    SDL_StartTextInput();
+#endif
 
 #ifdef __APPLE__
     screen.setCursor(false);
@@ -58,18 +70,20 @@ static std::wstring getResourcesPath(const std::wstring& path)
 static void loadResources(const std::wstring &selfPath)
 {
     StringList dirs;
-#ifdef WIN32
-    dirs.push_back(getStorage()->get(L"path", L"") + L"\\res"); 
-#else
-#ifdef __APPLE__
+#ifdef __EMSCRIPTEN__
+    dirs.push_back(L".");
+#elif defined(WIN32)
+    dirs.push_back(getStorage()->get(L"path", L"") + L"\\res");
+#elif defined(__APPLE__)
     dirs.push_back(getResourcesPath(selfPath));
 #else
     dirs.push_back("/usr" L"/share/einstein/res");
     dirs.push_back(fromMbcs(getenv("HOME")) + L"/.einstein/res");
 #endif
-#endif
+#ifndef __EMSCRIPTEN__
     dirs.push_back(L"res");
     dirs.push_back(L".");
+#endif
     resources = new ResourcesCollection(dirs);
     msg.load();
 }
@@ -90,7 +104,21 @@ static void loadResources(const std::wstring &selfPath)
 
 int main(int argc, char *argv[])
 {
-#ifndef WIN32
+#ifdef __EMSCRIPTEN__
+    // Mount IDBFS and synchronously wait for IndexedDB to load
+    EM_ASM(
+        FS.mkdir('/einstein_data');
+        FS.mount(IDBFS, {}, '/einstein_data');
+        window._idbfs_ready = false;
+        FS.syncfs(true, function(err) {
+            if (err) console.error('Error loading from IDBFS:', err);
+            window._idbfs_ready = true;
+        });
+    );
+    while (!emscripten_run_script_int("window._idbfs_ready ? 1 : 0"))
+        emscripten_sleep(50);
+    ensureDirExists(L"/einstein_data/save");
+#elif !defined(WIN32)
     ensureDirExists(fromMbcs(getenv("HOME")) + std::wstring(L"/.einstein"));
 #endif
     

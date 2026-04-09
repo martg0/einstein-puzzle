@@ -1,5 +1,8 @@
 #include <time.h>
 #include <fstream>
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 #include "exceptions.h"
 #include "utils.h"
 #include "widgets.h"
@@ -124,7 +127,14 @@ class SaveCommand: public Command
                         throw Exception(L"Error saving game");
                     stream.close();
                     *saved = true;
-                } catch (...) { 
+#ifdef __EMSCRIPTEN__
+                    EM_ASM(
+                        FS.syncfs(false, function(err) {
+                            if (err) console.error('Error syncing saves to IDBFS:', err);
+                        });
+                    );
+#endif
+                } catch (...) {
                     showMessageWindow(&area, L"redpattern.bmp", 300, 80, font,
                             255,255,255, msg(L"saveError"));
                 }
@@ -139,8 +149,10 @@ class SaveCommand: public Command
 
 static std::wstring getSavesPath()
 {
-#ifndef WIN32
-    std::wstring path(fromMbcs(getenv("HOME")) + 
+#ifdef __EMSCRIPTEN__
+    std::wstring path(L"/einstein_data/save");
+#elif !defined(WIN32)
+    std::wstring path(fromMbcs(getenv("HOME")) +
             std::wstring(L"/.einstein/save"));
 #else
     std::wstring path(getStorage()->get(L"path", L""));

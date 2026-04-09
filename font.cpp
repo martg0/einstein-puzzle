@@ -72,7 +72,7 @@ void Font::draw(SDL_Surface *s, int x, int y, int r, int g, int b,
         SDL_BlitSurface(surface, &src, s, &dst);
         SDL_FreeSurface(surface);
     }
-    SDL_Color color = { r, g, b, 0 };
+    SDL_Color color = { (Uint8)r, (Uint8)g, (Uint8)b, 0 };
     SDL_Surface *surface = TTF_RenderUNICODE_Blended(font, str, color);
     SDL_Rect src = { 0, 0, surface->w, surface->h };
     SDL_Rect dst = { x, y, surface->w, surface->h };

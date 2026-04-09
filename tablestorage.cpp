@@ -1,6 +1,9 @@
 #include <iostream>
 #include <fstream>
 #include <stdlib.h>
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 #include "tablestorage.h"
 #include "unicode.h"
 #include "exceptions.h"
@@ -24,7 +27,9 @@ TableStorage::~TableStorage()
 
 std::wstring TableStorage::getFileName()
 {
-#ifndef WIN32
+#ifdef __EMSCRIPTEN__
+    return L"/einstein_data/einsteinrc";
+#elif !defined(WIN32)
     return std::wstring(fromMbcs(getenv("HOME"))) + L"/.einstein/einsteinrc";
 #else
     return L"einstein.cfg";
@@ -55,5 +60,12 @@ void TableStorage::set(const std::wstring &name, const std::wstring &value)
 void TableStorage::flush()
 {
     table.save(getFileName());
+#ifdef __EMSCRIPTEN__
+    EM_ASM(
+        FS.syncfs(false, function(err) {
+            if (err) console.error('Error syncing to IDBFS:', err);
+        });
+    );
+#endif
 }
 

@@ -282,11 +282,25 @@ void Area::handleEvent(const SDL_Event &event)
         
         case SDL_KEYDOWN:
             for (WidgetsList::iterator i = widgets.begin(); i != widgets.end(); i++)
-                if ((*i)->onKeyDown(event.key.keysym.sym, 
-                            (unsigned char)event.key.keysym.unicode))
+                if ((*i)->onKeyDown(event.key.keysym.sym,
+#ifdef __EMSCRIPTEN__
+                            0
+#else
+                            (unsigned char)event.key.keysym.unicode
+#endif
+                            ))
                     return;
             break;
-        
+
+#ifdef __EMSCRIPTEN__
+        case SDL_TEXTINPUT:
+            for (WidgetsList::iterator i = widgets.begin(); i != widgets.end(); i++)
+                if ((*i)->onKeyDown(SDLK_UNKNOWN,
+                            (unsigned char)event.text.text[0]))
+                    return;
+            break;
+#endif
+
         case SDL_QUIT:
             exit(0);
     }

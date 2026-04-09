@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Einstein Puzzle</title>
+  <style>
+    body {
+      margin: 0;
+      background: #1a1a2e;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: sans-serif;
+      color: #eee;
+    }
+    #container {
+      text-align: center;
+    }
+    canvas.emscripten {
+      border: 2px solid #444;
+      background: #000;
+      display: block;
+      margin: 0 auto;
+      width: 1024px;
+      height: 768px;
+    }
+    #status {
+      margin-top: 12px;
+      font-size: 14px;
+      color: #aaa;
+    }
+    #progress {
+      width: 300px;
+      margin: 10px auto;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+    <div id="status">Downloading...</div>
+    <progress id="progress" value="0" max="100" hidden></progress>
+  </div>
+
+  <script>
+    var statusElement = document.getElementById('status');
+    var progressElement = document.getElementById('progress');
+
+    var Module = {
+      canvas: (function() { return document.getElementById('canvas'); })(),
+      setStatus: function(text) {
+        if (!text) {
+          statusElement.style.display = 'none';
+          progressElement.hidden = true;
+          return;
+        }
+        var m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
+        if (m) {
+          progressElement.value = parseInt(m[2]) * 100 / parseInt(m[4]);
+          progressElement.hidden = false;
+        }
+        statusElement.innerHTML = text;
+      },
+      totalDependencies: 0,
+      monitorRunDependencies: function(left) {
+        this.totalDependencies = Math.max(this.totalDependencies, left);
+        Module.setStatus(left ? 'Preparing... (' + (this.totalDependencies - left) + '/' + this.totalDependencies + ')' : '');
+      }
+    };
+
+    Module.setStatus('Downloading...');
+    window.onerror = function() {
+      Module.setStatus('Error - check browser console');
+    };
+  </script>
+  {{{ SCRIPT }}}
+</body>
+</html>

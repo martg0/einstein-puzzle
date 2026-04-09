@@ -1,0 +1,54 @@
+########################################
+#
+# Emscripten/WebAssembly build
+#
+########################################
+
+CXX=em++
+OPTIMIZE=-O2
+DEBUG=
+CXXFLAGS=-pipe -Wall $(OPTIMIZE) $(DEBUG) \
+	-s USE_SDL=2 -s USE_SDL_TTF=2 -s USE_SDL_MIXER=2 -s USE_ZLIB=1 -s USE_FREETYPE=1 \
+	-DPREFIX=L\"/\" -D__EMSCRIPTEN__ -s NO_DISABLE_EXCEPTION_CATCHING
+LNFLAGS=-s USE_SDL=2 -s USE_SDL_TTF=2 -s USE_SDL_MIXER=2 -s USE_ZLIB=1 -s USE_FREETYPE=1 \
+	-s ASYNCIFY -s ALLOW_MEMORY_GROWTH=1 \
+	-s ASYNCIFY_STACK_SIZE=65536 \
+	-s NO_DISABLE_EXCEPTION_CATCHING \
+	-lidbfs.js \
+	--preload-file einstein.res \
+	--shell-file shell.html
+
+TARGET=einstein.html
+
+SOURCES=puzgen.cpp main.cpp screen.cpp resources.cpp utils.cpp game.cpp \
+	widgets.cpp iconset.cpp puzzle.cpp rules.cpp \
+	verthins.cpp random.cpp horhints.cpp menu.cpp font.cpp \
+	conf.cpp storage.cpp tablestorage.cpp regstorage.cpp \
+	topscores.cpp opensave.cpp descr.cpp options.cpp messages.cpp \
+	formatter.cpp buffer.cpp unicode.cpp convert.cpp table.cpp \
+	i18n.cpp lexal.cpp streams.cpp tokenizer.cpp sound.cpp
+CSOURCES=sdl1_compat.c
+OBJECTS=puzgen.o main.o screen.o resources.o utils.o game.o \
+	widgets.o iconset.o puzzle.o rules.o verthints.o random.o \
+	horhints.o menu.o font.o conf.o storage.o options.o \
+	tablestorage.o regstorage.o topscores.o opensave.o descr.o \
+	messages.o formatter.o buffer.o unicode.o convert.o table.o \
+	i18n.o lexal.o streams.o tokenizer.o sound.o \
+	sdl1_compat.o
+
+.cpp.o:
+	$(CXX) $(CXXFLAGS) -c $<
+
+.c.o:
+	emcc $(CXXFLAGS) -c $<
+
+all: $(TARGET)
+
+$(TARGET): $(OBJECTS)
+	$(CXX) $(LNFLAGS) $(OBJECTS) -o $(TARGET)
+
+clean:
+	rm -f $(OBJECTS) core* *core einstein.html einstein.js einstein.wasm einstein.data einstein.worker.js *~
+
+run: $(TARGET)
+	emrun einstein.html
