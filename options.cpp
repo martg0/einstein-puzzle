@@ -75,14 +75,16 @@ void showOptionsWindow(Area *parentArea)
                 Label::ALIGN_MIDDLE, 255,255,255, msg(L"volume")));
     area.add(new Slider(360, 332, 160, 16, volume));
     
-    ExitCommand exitCmd(area);
-    OptionsChangedCommand okCmd(&area, fullscreen, niceCursor, volume);
-    area.add(new Button(315, 390, 85, 25, &font, 255,255,0, L"blue.bmp", 
-                msg(L"ok"), &okCmd));
-    area.add(new Button(405, 390, 85, 25, &font, 255,255,0, L"blue.bmp", 
-                msg(L"cancel"), &exitCmd));
-    area.add(new KeyAccel(SDLK_ESCAPE, &exitCmd));
-    area.add(new KeyAccel(SDLK_RETURN, &okCmd));
+    ExitCommand *exitCmd = new ExitCommand(area);
+    OptionsChangedCommand *okCmd = new OptionsChangedCommand(&area, fullscreen, niceCursor, volume);
+    area.add(new Button(315, 390, 85, 25, &font, 255,255,0, L"blue.bmp",
+                msg(L"ok"), okCmd));
+    area.add(new Button(405, 390, 85, 25, &font, 255,255,0, L"blue.bmp",
+                msg(L"cancel"), exitCmd));
+    area.add(new KeyAccel(SDLK_ESCAPE, exitCmd));
+    area.add(new KeyAccel(SDLK_RETURN, okCmd));
     area.run();
+    delete exitCmd;
+    delete okCmd;
 }
 

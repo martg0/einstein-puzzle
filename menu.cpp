@@ -148,12 +148,13 @@ class AboutCommand: public Command
             LABEL(280, 255, font, msg(L"copyright"))
             LABEL(330, 0, urlFont, L"http://games.flowix.com")
 #undef LABEL
-            ExitCommand exitCmd(area);
-            area.add(new Button(360, 400, 80, 25, &font, 255,255,0, L"blue.bmp", 
-                        msg(L"ok"), &exitCmd));
-            area.add(new KeyAccel(SDLK_ESCAPE, &exitCmd));
-            area.add(new KeyAccel(SDLK_RETURN, &exitCmd));
+            ExitCommand *exitCmd = new ExitCommand(area);
+            area.add(new Button(360, 400, 80, 25, &font, 255,255,0, L"blue.bmp",
+                        msg(L"ok"), exitCmd));
+            area.add(new KeyAccel(SDLK_ESCAPE, exitCmd));
+            area.add(new KeyAccel(SDLK_RETURN, exitCmd));
             area.run();
+            delete exitCmd;
 
             parentArea->updateMouse();
             parentArea->draw();

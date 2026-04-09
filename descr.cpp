@@ -182,11 +182,12 @@ void Description::run()
     area.add(new Label(titleFont, 250, 60, 300, 40, Label::ALIGN_CENTER, Label::ALIGN_MIDDLE, 255, 255, 0, msg(L"rules")));
     area.add(new Button(110, 515, 80, 25, buttonFont, 255, 255, 0, L"blue.bmp", msg(L"prev"), prevCmd));
     area.add(new Button(200, 515, 80, 25, buttonFont, 255, 255, 0, L"blue.bmp", msg(L"next"), nextCmd));
-    ExitCommand exitCmd(area);
-    area.add(new Button(610, 515, 80, 25, buttonFont, 255, 255, 0, L"blue.bmp", msg(L"close"), &exitCmd));
-    area.add(new KeyAccel(SDLK_ESCAPE, &exitCmd));
+    ExitCommand *exitCmd = new ExitCommand(area);
+    area.add(new Button(610, 515, 80, 25, buttonFont, 255, 255, 0, L"blue.bmp", msg(L"close"), exitCmd));
+    area.add(new KeyAccel(SDLK_ESCAPE, exitCmd));
     printPage();
     area.run();
+    delete exitCmd;
 }
 
 void Description::printPage()

@@ -104,15 +104,17 @@ class SaveCommand: public Command
             area.add(new Label(font, 180, 300, 255,255,0, msg(L"enterGame")));
             area.add(new InputField(340, 300, 280, 26, L"blue.bmp", name, 20,  
                         255,255,0,  font));
-            ExitCommand exitCmd(area);
-            OkCommand okCmd(area, saved);
-            area.add(new Button(310, 340, 80, 25, font, 255,255,0, L"blue.bmp", 
-                        msg(L"ok"), &okCmd));
-            area.add(new Button(400, 340, 80, 25, font, 255,255,0, L"blue.bmp", 
-                        msg(L"cancel"), &exitCmd));
-            area.add(new KeyAccel(SDLK_ESCAPE, &exitCmd));
-            area.add(new KeyAccel(SDLK_RETURN, &okCmd));
+            ExitCommand *exitCmd = new ExitCommand(area);
+            OkCommand *okCmd = new OkCommand(area, saved);
+            area.add(new Button(310, 340, 80, 25, font, 255,255,0, L"blue.bmp",
+                        msg(L"ok"), okCmd));
+            area.add(new Button(400, 340, 80, 25, font, 255,255,0, L"blue.bmp",
+                        msg(L"cancel"), exitCmd));
+            area.add(new KeyAccel(SDLK_ESCAPE, exitCmd));
+            area.add(new KeyAccel(SDLK_RETURN, okCmd));
             area.run();
+            delete exitCmd;
+            delete okCmd;
 
             if (*saved) {
                 *saved = false;
@@ -177,10 +179,10 @@ static void showListWindow(SavesList &list, Command **commands,
     area.add(new Window(250, 90, 300, 420, L"blue.bmp"));
     area.add(new Label(&titleFont, 250, 95, 300, 40, Label::ALIGN_CENTER,
                 Label::ALIGN_MIDDLE, 255,255,0, title));
-    ExitCommand exitCmd(area);
-    area.add(new Button(360, 470, 80, 25, font, 255,255,0, L"blue.bmp", 
-                msg(L"close"), &exitCmd));
-    area.add(new KeyAccel(SDLK_ESCAPE, &exitCmd)); 
+    ExitCommand *exitCmd = new ExitCommand(area);
+    area.add(new Button(360, 470, 80, 25, font, 255,255,0, L"blue.bmp",
+                msg(L"close"), exitCmd));
+    area.add(new KeyAccel(SDLK_ESCAPE, exitCmd));
 
     int pos = 150;
     int no = 0;
@@ -192,6 +194,7 @@ static void showListWindow(SavesList &list, Command **commands,
     }
     
     area.run();
+    delete exitCmd;
 }
 
 

@@ -270,10 +270,11 @@ class FailCommand: public Command
             OkDlgCommand restartCmd(&area, restart);
             area.add(new Button(350, 340, 90, 25, &btnFont, 255,255,0, 
                         L"redpattern.bmp", msg(L"tryAgain"), &restartCmd));
-            ExitCommand exitCmd(area);
-            area.add(new Button(450, 340, 90, 25, &btnFont, 255,255,0, 
-                        L"redpattern.bmp", msg(L"exit"), &exitCmd));
+            ExitCommand *exitCmd = new ExitCommand(area);
+            area.add(new Button(450, 340, 90, 25, &btnFont, 255,255,0,
+                        L"redpattern.bmp", msg(L"exit"), exitCmd));
             area.run();
+            delete exitCmd;
             if (restart || newGame) {
                 if (newGame)
                     game->newGame();
@@ -556,14 +557,15 @@ void Game::run()
     BUTTON(12, 440, L"save", &saveCmd)
     GameOptionsCommand optionsCmd(&area);
     BUTTON(119, 440, L"options", &optionsCmd)
-    ExitCommand exitGameCmd(area);
-    BUTTON(226, 400, L"exit", &exitGameCmd)
-    area.add(new KeyAccel(SDLK_ESCAPE, &exitGameCmd));
+    ExitCommand *exitGameCmd = new ExitCommand(area);
+    BUTTON(226, 400, L"exit", exitGameCmd)
+    area.add(new KeyAccel(SDLK_ESCAPE, exitGameCmd));
     HelpCommand helpCmd(&area, watch, background);
     BUTTON(226, 440, L"help", &helpCmd)
     area.add(watch, false);
 
     watch->start();
     area.run();
+    delete exitGameCmd;
 }
 
