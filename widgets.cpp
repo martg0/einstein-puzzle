@@ -281,25 +281,61 @@ void Area::handleEvent(const SDL_Event &event)
             break;
         
         case SDL_KEYDOWN:
-            for (WidgetsList::iterator i = widgets.begin(); i != widgets.end(); i++)
-                if ((*i)->onKeyDown(event.key.keysym.sym,
+            {
+                SDLKey key;
+                unsigned char ch;
 #ifdef __EMSCRIPTEN__
-                            0
+                // Emscripten SDL2 compat puts scancodes in keysym.sym
+                // instead of keycodes. Map scancodes manually.
+                {
+                    int sc = (int)event.key.keysym.sym;
+                    if (sc >= 4 && sc <= 29)        // A-Z scancodes
+                        key = (SDLKey)('a' + sc - 4);
+                    else if (sc >= 30 && sc <= 38)   // 1-9
+                        key = (SDLKey)('1' + sc - 30);
+                    else if (sc == 39)               // 0
+                        key = (SDLKey)'0';
+                    else if (sc == 40) key = SDLK_RETURN;
+                    else if (sc == 41) key = SDLK_ESCAPE;
+                    else if (sc == 42) key = SDLK_BACKSPACE;
+                    else if (sc == 43) key = SDLK_TAB;
+                    else if (sc == 44) key = (SDLKey)' ';
+                    else if (sc == 45) key = (SDLKey)'-';
+                    else if (sc == 46) key = (SDLKey)'=';
+                    else if (sc == 47) key = (SDLKey)'[';
+                    else if (sc == 48) key = (SDLKey)']';
+                    else if (sc == 51) key = (SDLKey)';';
+                    else if (sc == 52) key = (SDLKey)'\'';
+                    else if (sc == 54) key = (SDLKey)',';
+                    else if (sc == 55) key = (SDLKey)'.';
+                    else if (sc == 56) key = (SDLKey)'/';
+                    else if (sc == 76) key = SDLK_DELETE;
+                    else if (sc == 74) key = SDLK_HOME;
+                    else if (sc == 77) key = SDLK_END;
+                    else if (sc == 79) key = SDLK_RIGHT;
+                    else if (sc == 80) key = SDLK_LEFT;
+                    else if (sc == 81) key = SDLK_DOWN;
+                    else if (sc == 82) key = SDLK_UP;
+                    else key = SDLK_UNKNOWN;
+                }
+                // Derive printable character from keycode
+                // Always output uppercase - game font renders lowercase inconsistently
+                if (key >= 'a' && key <= 'z') {
+                    ch = (unsigned char)(key - 'a' + 'A');
+                } else if (key >= ' ' && key < 127) {
+                    ch = (unsigned char)key;
+                } else {
+                    ch = 0;
+                }
 #else
-                            (unsigned char)event.key.keysym.unicode
+                key = event.key.keysym.sym;
+                ch = (unsigned char)event.key.keysym.unicode;
 #endif
-                            ))
-                    return;
+                for (WidgetsList::iterator i = widgets.begin(); i != widgets.end(); i++)
+                    if ((*i)->onKeyDown(key, ch))
+                        return;
+            }
             break;
-
-#ifdef __EMSCRIPTEN__
-        case SDL_TEXTINPUT:
-            for (WidgetsList::iterator i = widgets.begin(); i != widgets.end(); i++)
-                if ((*i)->onKeyDown(SDLK_UNKNOWN,
-                            (unsigned char)event.text.text[0]))
-                    return;
-            break;
-#endif
 
         case SDL_QUIT:
             exit(0);
