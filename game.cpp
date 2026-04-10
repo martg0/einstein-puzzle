@@ -216,11 +216,9 @@ class WinCommand: public Command
             TopScores scores;
             int score = watch->getElapsed() / 1000;
             int pos = -1;
-            if (! game->isHinted()) {
-                if ((! scores.isFull()) || (score < scores.getMaxScore())) {
-                    std::wstring name = enterNameDialog(gameArea);
-                    pos = scores.add(name, score);
-                }
+            if ((! scores.isFull()) || (score < scores.getMaxScore())) {
+                std::wstring name = enterNameDialog(gameArea);
+                pos = scores.add(name, score);
             }
             showScoresWindow(gameArea, &scores, pos);
             gameArea->finishEventLoop();
@@ -264,16 +262,18 @@ class FailCommand: public Command
             area.add(new Window(220, 240, 360, 140, L"redpattern.bmp", 6));
             area.add(new Label(&font, 250, 230, 300, 100, Label::ALIGN_CENTER,
                         Label::ALIGN_MIDDLE, 255,255,0, msg(L"loose")));
-            OkDlgCommand newGameCmd(&area, newGame);
-            area.add(new Button(250, 340, 90, 25, &btnFont, 255,255,0, 
-                        L"redpattern.bmp", msg(L"startNew"), &newGameCmd));
-            OkDlgCommand restartCmd(&area, restart);
-            area.add(new Button(350, 340, 90, 25, &btnFont, 255,255,0, 
-                        L"redpattern.bmp", msg(L"tryAgain"), &restartCmd));
+            OkDlgCommand *newGameCmd = new OkDlgCommand(&area, newGame);
+            area.add(new Button(250, 340, 90, 25, &btnFont, 255,255,0,
+                        L"redpattern.bmp", msg(L"startNew"), newGameCmd));
+            OkDlgCommand *restartCmd = new OkDlgCommand(&area, restart);
+            area.add(new Button(350, 340, 90, 25, &btnFont, 255,255,0,
+                        L"redpattern.bmp", msg(L"tryAgain"), restartCmd));
             ExitCommand *exitCmd = new ExitCommand(area);
             area.add(new Button(450, 340, 90, 25, &btnFont, 255,255,0,
                         L"redpattern.bmp", msg(L"exit"), exitCmd));
             area.run();
+            delete newGameCmd;
+            delete restartCmd;
             delete exitCmd;
             if (restart || newGame) {
                 if (newGame)
@@ -325,16 +325,22 @@ class CheatCommand: public Command
 {
     private:
         Area *gameArea;
+        Puzzle *puzzle;
 
     public:
-        CheatCommand(Area *a) { gameArea = a; };
+        CheatCommand(Area *a, Puzzle *p) { gameArea = a; puzzle = p; };
         
         virtual void doAction() {
+#ifdef __EMSCRIPTEN__
+            // Auto-solve for testing
+            puzzle->onVictory();
+#else
             Font font(L"nova.ttf", 30);
-            showMessageWindow(gameArea, L"darkpattern.bmp", 
-                    500, 100, &font, 255,255,255, 
+            showMessageWindow(gameArea, L"darkpattern.bmp",
+                    500, 100, &font, 255,255,255,
                     msg(L"iddqd"));
             gameArea->draw();
+#endif
         };
 };
 
@@ -540,32 +546,40 @@ void Game::run()
 
     GameBackground *background = new GameBackground();
     area.add(background);
-    CheatCommand cheatCmd(&area);
-    area.add(new CheatAccel(L"iddqd", &cheatCmd));
-    WinCommand winCmd(&area, watch, this);
-    FailCommand failCmd(&area, this);
-    puzzle->setCommands(&winCmd, &failCmd);
+    CheatCommand *cheatCmd = new CheatCommand(&area, puzzle);
+    area.add(new CheatAccel(L"iddqd", cheatCmd));
+    WinCommand *winCmd = new WinCommand(&area, watch, this);
+    FailCommand *failCmd = new FailCommand(&area, this);
+    puzzle->setCommands(winCmd, failCmd);
     area.add(puzzle, false);
     area.add(verHints, false);
     area.add(horHints, false);
-    
-    PauseGameCommand pauseGameCmd(&area, watch, background);
-    BUTTON(12, 400, L"pause", &pauseGameCmd)
-    ToggleHintCommand toggleHintsCmd(verHints, horHints);
-    BUTTON(119, 400, L"switch", &toggleHintsCmd)
-    SaveGameCommand saveCmd(&area, watch, background, this);
-    BUTTON(12, 440, L"save", &saveCmd)
-    GameOptionsCommand optionsCmd(&area);
-    BUTTON(119, 440, L"options", &optionsCmd)
+
+    PauseGameCommand *pauseGameCmd = new PauseGameCommand(&area, watch, background);
+    BUTTON(12, 400, L"pause", pauseGameCmd)
+    ToggleHintCommand *toggleHintsCmd = new ToggleHintCommand(verHints, horHints);
+    BUTTON(119, 400, L"switch", toggleHintsCmd)
+    SaveGameCommand *saveCmd = new SaveGameCommand(&area, watch, background, this);
+    BUTTON(12, 440, L"save", saveCmd)
+    GameOptionsCommand *optionsCmd = new GameOptionsCommand(&area);
+    BUTTON(119, 440, L"options", optionsCmd)
     ExitCommand *exitGameCmd = new ExitCommand(area);
     BUTTON(226, 400, L"exit", exitGameCmd)
     area.add(new KeyAccel(SDLK_ESCAPE, exitGameCmd));
-    HelpCommand helpCmd(&area, watch, background);
-    BUTTON(226, 440, L"help", &helpCmd)
+    HelpCommand *helpCmd = new HelpCommand(&area, watch, background);
+    BUTTON(226, 440, L"help", helpCmd)
     area.add(watch, false);
 
     watch->start();
     area.run();
+    delete cheatCmd;
+    delete winCmd;
+    delete failCmd;
+    delete pauseGameCmd;
+    delete toggleHintsCmd;
+    delete saveCmd;
+    delete optionsCmd;
     delete exitGameCmd;
+    delete helpCmd;
 }
 

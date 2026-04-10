@@ -45,7 +45,7 @@ static void initScreen()
     SDL_StartTextInput();
 #endif
 
-#if defined(__APPLE__) || defined(__EMSCRIPTEN__)
+#ifdef __APPLE__
     screen.setCursor(false);
 #else
     screen.setCursor(getStorage()->get(L"niceCursor", 1));

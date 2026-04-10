@@ -45,8 +45,9 @@ class NewGameCommand: public Command
         NewGameCommand(Area *a) { area = a; };
 
         virtual void doAction() {
-            Game game;
-            game.run();
+            Game *game = new Game();
+            game->run();
+            delete game;
             area->updateMouse();
             area->draw();
         };
