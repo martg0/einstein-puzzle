@@ -227,6 +227,11 @@ bool KeyAccel::onKeyDown(SDLKey k, unsigned char ch)
 Area::Area()
 {
     timer = NULL;
+#ifdef __EMSCRIPTEN__
+    longPressStart = 0;
+    longPressX = longPressY = 0;
+    longPressActive = false;
+#endif
 }
 
 Area::~Area()
@@ -255,19 +260,53 @@ void Area::remove(Widget *widget)
 void Area::handleEvent(const SDL_Event &event)
 {
     switch (event.type) {
+#ifdef __EMSCRIPTEN__
+        // On Emscripten/mobile: defer button-down to button-up so we can
+        // detect long press (>500ms) as right-click for touch devices.
+        case SDL_MOUSEBUTTONDOWN:
+            if (event.button.button == SDL_BUTTON_LEFT) {
+                longPressStart = SDL_GetTicks();
+                longPressX = event.button.x;
+                longPressY = event.button.y;
+                longPressActive = true;
+            } else {
+                for (WidgetsList::iterator i = widgets.begin(); i != widgets.end(); i++)
+                    if ((*i)->onMouseButtonDown(event.button.button,
+                                event.button.x, event.button.y))
+                        return;
+            }
+            break;
+
+        case SDL_MOUSEBUTTONUP:
+            if (event.button.button == SDL_BUTTON_LEFT && longPressActive) {
+                longPressActive = false;
+                Uint32 elapsed = SDL_GetTicks() - longPressStart;
+                int button = (elapsed >= 500) ? SDL_BUTTON_RIGHT : SDL_BUTTON_LEFT;
+                for (WidgetsList::iterator i = widgets.begin(); i != widgets.end(); i++)
+                    if ((*i)->onMouseButtonDown(button,
+                                event.button.x, event.button.y))
+                        return;
+            }
+            for (WidgetsList::iterator i = widgets.begin(); i != widgets.end(); i++)
+                if ((*i)->onMouseButtonUp(event.button.button,
+                            event.button.x, event.button.y))
+                    return;
+            break;
+#else
         case SDL_MOUSEBUTTONDOWN:
             for (WidgetsList::iterator i = widgets.begin(); i != widgets.end(); i++)
-                if ((*i)->onMouseButtonDown(event.button.button, 
+                if ((*i)->onMouseButtonDown(event.button.button,
                             event.button.x, event.button.y))
                     return;
             break;
-        
+
         case SDL_MOUSEBUTTONUP:
             for (WidgetsList::iterator i = widgets.begin(); i != widgets.end(); i++)
-                if ((*i)->onMouseButtonUp(event.button.button, 
+                if ((*i)->onMouseButtonUp(event.button.button,
                             event.button.x, event.button.y))
                     return;
             break;
+#endif
         
         case SDL_MOUSEMOTION:
             for (WidgetsList::iterator i = widgets.begin(); i != widgets.end(); i++)

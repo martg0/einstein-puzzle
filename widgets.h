@@ -103,6 +103,11 @@ class Area: public Widget
         bool terminate;
         Uint32 time;
         TimerHandler *timer;
+#ifdef __EMSCRIPTEN__
+        Uint32 longPressStart;
+        int longPressX, longPressY;
+        bool longPressActive;
+#endif
 
     public:
         Area();
