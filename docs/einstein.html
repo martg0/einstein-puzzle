@@ -119,15 +119,19 @@
       var isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
       var container = document.getElementById('container');
       if (isFs) {
-        var sw = window.innerWidth, sh = window.innerHeight;
-        var scale = Math.min(sw / 800, sh / 600);
+        var sw = screen.availWidth || window.innerWidth;
+        var sh = screen.availHeight || window.innerHeight;
+        // Leave small margin to avoid clipping on iPad/mobile
+        var scale = Math.min(sw / 800, sh / 600) * 0.95;
         canvas.style.transform = 'scale(' + scale + ')';
         canvas.style.transformOrigin = 'center center';
         container.style.display = 'flex';
         container.style.justifyContent = 'center';
         container.style.alignItems = 'center';
-        container.style.height = '100vh';
+        container.style.height = '100dvh';
+        container.style.maxHeight = '100vh';
         container.style.background = '#000';
+        container.style.overflow = 'hidden';
         document.getElementById('controls').style.display = 'none';
         document.getElementById('mobile-hint').style.display = 'none';
       } else {
@@ -137,7 +141,9 @@
         container.style.justifyContent = '';
         container.style.alignItems = '';
         container.style.height = '';
+        container.style.maxHeight = '';
         container.style.background = '';
+        container.style.overflow = '';
         document.getElementById('controls').style.display = '';
       }
     }
