@@ -147,16 +147,9 @@
 
     // Reset saves
     document.getElementById('reset-btn').addEventListener('click', function() {
-      if (confirm('Delete all saves, scores, and settings? This cannot be undone.')) {
-        // Clear IndexedDB
-        var req = indexedDB.deleteDatabase('/einstein_data');
-        req.onsuccess = function() {
-          alert('Saves cleared. Reloading...');
-          location.reload();
-        };
-        req.onerror = function() {
-          alert('Error clearing saves.');
-        };
+      if (confirm('Delete all saves, scores, and settings?')) {
+        indexedDB.deleteDatabase('/einstein_data');
+        location.reload();
       }
     });
 

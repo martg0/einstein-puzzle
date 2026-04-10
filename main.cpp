@@ -131,6 +131,9 @@ int main(int argc, char *argv[])
 //        checkBetaExpire();
         menu();
         getStorage()->flush();
+#ifdef __EMSCRIPTEN__
+        EM_ASM( location.reload(); );
+#endif
     } catch (Exception &e) {
         std::cerr << L"ERROR: " << e.getMessage() << std::endl;
     } catch (...) {
