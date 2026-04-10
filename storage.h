@@ -17,6 +17,7 @@ class Storage
         virtual void set(const std::wstring &name, int value) = 0;
         virtual void set(const std::wstring &name, const std::wstring &value) = 0;
         virtual void flush() = 0;
+        virtual void reload() { };
 };
 
 

@@ -117,6 +117,8 @@ int main(int argc, char *argv[])
     );
     while (!emscripten_run_script_int("window._idbfs_ready ? 1 : 0"))
         emscripten_sleep(50);
+    // Reload storage now that IDBFS has synced from IndexedDB
+    getStorage()->reload();
     ensureDirExists(L"/einstein_data/save");
 #elif !defined(WIN32)
     ensureDirExists(fromMbcs(getenv("HOME")) + std::wstring(L"/.einstein"));

@@ -57,6 +57,13 @@ void TableStorage::set(const std::wstring &name, const std::wstring &value)
     table.setString(name, value);
 }
 
+void TableStorage::reload()
+{
+    try {
+        table = Table(toMbcs(getFileName()));
+    } catch (...) { }
+}
+
 void TableStorage::flush()
 {
     table.save(getFileName());

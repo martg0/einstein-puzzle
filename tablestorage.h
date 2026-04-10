@@ -22,6 +22,7 @@ class TableStorage: public Storage
         virtual void set(const std::wstring &name, int value);
         virtual void set(const std::wstring &name, const std::wstring &value);
         virtual void flush();
+        void reload();
 
     private:
         std::wstring getFileName();

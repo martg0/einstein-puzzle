@@ -1,3 +1,6 @@
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 #include "main.h"
 #include "utils.h"
 #include "widgets.h"
@@ -219,6 +222,19 @@ class WinCommand: public Command
             if ((! scores.isFull()) || (score < scores.getMaxScore())) {
                 std::wstring name = enterNameDialog(gameArea);
                 pos = scores.add(name, score);
+                scores.save();
+#ifdef __EMSCRIPTEN__
+                // Wait for IDBFS to finish writing to IndexedDB
+                EM_ASM(
+                    window._idbfs_saved = false;
+                    FS.syncfs(false, function(err) {
+                        if (err) console.error('Error syncing scores:', err);
+                        window._idbfs_saved = true;
+                    });
+                );
+                while (!emscripten_run_script_int("window._idbfs_saved ? 1 : 0"))
+                    emscripten_sleep(50);
+#endif
             }
             showScoresWindow(gameArea, &scores, pos);
             gameArea->finishEventLoop();
@@ -325,22 +341,16 @@ class CheatCommand: public Command
 {
     private:
         Area *gameArea;
-        Puzzle *puzzle;
 
     public:
-        CheatCommand(Area *a, Puzzle *p) { gameArea = a; puzzle = p; };
+        CheatCommand(Area *a) { gameArea = a; };
         
         virtual void doAction() {
-#ifdef __EMSCRIPTEN__
-            // Auto-solve for testing
-            puzzle->onVictory();
-#else
             Font font(L"nova.ttf", 30);
             showMessageWindow(gameArea, L"darkpattern.bmp",
                     500, 100, &font, 255,255,255,
                     msg(L"iddqd"));
             gameArea->draw();
-#endif
         };
 };
 
@@ -546,7 +556,7 @@ void Game::run()
 
     GameBackground *background = new GameBackground();
     area.add(background);
-    CheatCommand *cheatCmd = new CheatCommand(&area, puzzle);
+    CheatCommand *cheatCmd = new CheatCommand(&area);
     area.add(new CheatAccel(L"iddqd", cheatCmd));
     WinCommand *winCmd = new WinCommand(&area, watch, this);
     FailCommand *failCmd = new FailCommand(&area, this);
